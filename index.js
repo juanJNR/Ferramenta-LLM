@@ -1,5 +1,10 @@
 import "dotenv/config";
 import readline from "readline";
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const API_KEY = process.env.OPENROUTER_API_KEY;
 const MODEL = "openai/gpt-oss-120b:free";
@@ -205,7 +210,12 @@ REGRAS IMPORTANTES:
         if (opcao === '1') {
             await fazerQuiz(card, palavraIngles, card.palavra_portugues);
         } else if (opcao === '2') {
-            console.log('[ anki coming in next commit ]');
+            const ankiDir = path.join(__dirname, 'anki');
+            fs.mkdirSync(ankiDir, { recursive: true });
+            const frase = card.frases[0];
+            const linha = `${frase.frase_ingles};${frase.frase_portugues};${card.palavra_portugues};${card.som_aproximado}\n`;
+            fs.appendFileSync(path.join(ankiDir, 'exportados.txt'), linha, 'utf8');
+            console.log('✅ Palavra exportada para anki/exportados.txt');
         } else if (opcao === '3') {
             break;
         } else if (opcao === '4') {
