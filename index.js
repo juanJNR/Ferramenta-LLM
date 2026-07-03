@@ -12,9 +12,101 @@ if (!API_KEY) {
 const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
 const question = (prompt) => new Promise(resolve => rl.question(prompt, resolve));
 
+async function gerarPergunta(palavraIngles, palavraPortugues) {
+    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+            "Authorization": `Bearer ${API_KEY}`,
+            "Content-Type": "application/json",
+            "HTTP-Referer": "http://localhost:3000",
+            "X-OpenRouter-Title": "Atividade FIA ADS"
+        },
+        body: JSON.stringify({
+            model: MODEL,
+            messages: [
+                {
+                    role: "system",
+                    content: `Você é um gerador de quiz para um app de aprendizado de inglês.
+Gere uma pergunta de quiz sobre a palavra '${palavraIngles}' (português: '${palavraPortugues}').
+Responda APENAS com um JSON válido, sem texto fora do JSON.
+
+Escolha aleatoriamente um destes 3 tipos:
+
+Tipo 1 - Preencher a lacuna:
+{"tipo":"lacuna","pergunta":"frase em inglês com ___ no lugar da palavra (nível A1/A2)","opcoes":["palavra correta","errada1","errada2","errada3"],"resposta_correta":0}
+
+Tipo 2 - Verdadeiro ou Falso:
+{"tipo":"verdadeiro_falso","pergunta":"uma afirmação sobre a palavra, verdadeira ou falsa","opcoes":["Verdadeiro","Falso"],"resposta_correta":0}
+
+Tipo 3 - Tradução de múltipla escolha:
+{"tipo":"traducao","pergunta":"Qual a tradução correta de ${palavraIngles}?","opcoes":["tradução correta","errada1","errada2","errada3"],"resposta_correta":0}
+
+IMPORTANTE: Todas as frases devem ser em inglês nível básico (A1/A2).`
+                },
+                { role: "user", content: palavraIngles }
+            ],
+            temperature: 0.7,
+            max_completion_tokens: 300
+        })
+    });
+    if (!response.ok) throw new Error(`Erro na API: ${response.status}`);
+    const data = await response.json();
+    const text = data.choices?.[0]?.message?.content;
+    return JSON.parse(text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim());
+}
+
+async function fazerQuiz(card, palavraIngles, palavraPortugues) {
+    const SEP = '━━━━━━━━━━━━━━━━━━━━━━━━━━━';
+    let questaoAtual = card.quiz;
+
+    for (let i = 1; i <= 5; i++) {
+        if (i > 1) {
+            console.log('\n⏳ Gerando pergunta...');
+            try {
+                questaoAtual = await gerarPergunta(palavraIngles, palavraPortugues);
+            } catch {
+                console.log('❌ Erro ao gerar pergunta, pulando...');
+                continue;
+            }
+        }
+
+        console.log('\n' + SEP);
+        console.log(`❓ QUIZ — Pergunta ${i} de 5`);
+        console.log(SEP);
+        console.log(`\n${questaoAtual.pergunta}\n`);
+        questaoAtual.opcoes.forEach((op, idx) => console.log(`${idx + 1}. ${op}`));
+
+        const resposta = await question('\nDigite sua resposta: ');
+        const indice = parseInt(resposta.trim()) - 1;
+
+        if (indice === questaoAtual.resposta_correta) {
+            console.log('✅ Correto!');
+        } else {
+            console.log(`❌ Incorreto. A resposta certa era ${questaoAtual.opcoes[questaoAtual.resposta_correta]}.`);
+        }
+
+        if (i < 5) {
+            const nav = await question('\n[ Pressione ENTER para próxima pergunta ou Q para voltar ao menu ] ');
+            if (nav.trim().toUpperCase() === 'Q') break;
+        }
+    }
+}
+
+async function mostrarMenu() {
+    const SEP = '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━';
+    console.log('\n' + SEP);
+    console.log('O que você quer fazer?');
+    console.log('1. Fazer quiz');
+    console.log('2. Exportar pro Anki');
+    console.log('3. Pesquisar outra palavra');
+    console.log('4. Sair');
+    console.log(SEP);
+    return question('Escolha: ');
+}
+
 async function chamarLLM() {
+    while (true) {
     const palavraIngles = await question("Digite uma palavra em inglês: ");
-    rl.close();
 
     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
         method: "POST",
@@ -107,6 +199,22 @@ REGRAS IMPORTANTES:
     console.log(`  verbo: ${card.familia.verbo ?? '—'}`);
     console.log(`  adjetivo: ${card.familia.adjetivo ?? '—'}`);
     console.log(SEP);
+
+    while (true) {
+        const opcao = await mostrarMenu();
+        if (opcao === '1') {
+            await fazerQuiz(card, palavraIngles, card.palavra_portugues);
+        } else if (opcao === '2') {
+            console.log('[ anki coming in next commit ]');
+        } else if (opcao === '3') {
+            break;
+        } else if (opcao === '4') {
+            console.log('Até logo! 👋');
+            rl.close();
+            process.exit(0);
+        }
+    }
+    } 
 }
 
 chamarLLM().catch((error) => {
