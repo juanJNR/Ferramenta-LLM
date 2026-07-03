@@ -1,22 +1,22 @@
-# 📖 Dicionário Inteligente EN → PT
+#  Dicionário Inteligente EN → PT
 
 Aplicação de terminal que recebe uma palavra em inglês e retorna sua tradução em português com exemplos, pronúncia e prática imediata via quiz.
 
-# 💡 Ideia
+#  Ideia
 
 Eu já usava o IA para criar flashcards e praticar palavras novas que descobria em filmes, vídeos ou redes sociais. O problema era o processo manual: pesquisar a tradução, escrever a frase, formatar o cartão para o Anki.
 
 Criei essa ferramenta para automatizar exatamente isso: digita a palavra, recebe o card completo com tradução, pronúncia e exemplos, pratica na hora com o quiz e exporta direto pro Anki.
 
-## 🎯 Objetivo
+##  Objetivo
 
 Ajudar estudantes de inglês a aprenderem novas palavras de forma prática, com exemplos reais de uso e fixação imediata pelo quiz, sem sair do terminal.
 
-## ⚙️ Requisitos
+##  Requisitos
 - Node.js 18 ou superior
 - Conta no OpenRouter (https://openrouter.ai) com chave de API
 
-## 🚀 Instalação
+##  Instalação
 
 1. Entre na pasta do projeto:
 cd dicionario-en
@@ -27,7 +27,6 @@ npm install
 3. Crie o arquivo .env baseado no .env:
 OPENROUTER_API_KEY=sua_chave_aqui
 
-⚠️ Nunca compartilhe sua chave. Não suba o .env pro GitHub.
 
 ## Como executar
 npm start
