@@ -29,7 +29,44 @@ async function chamarLLM() {
             messages: [
                 {
                     role: "system",
-                    content: "Você é um dicionário inteligente inglês → português. Quando o usuário enviar uma palavra em inglês, responda APENAS com um JSON válido, sem texto fora do JSON, sem markdown, sem explicações. Nunca invente traduções. Nunca saia do formato JSON."
+                    content: `Você é um dicionário inteligente inglês → português.
+Quando o usuário enviar uma palavra em inglês, responda APENAS com um JSON válido, sem texto fora do JSON, sem markdown, sem explicações.
+
+O JSON deve seguir exatamente este formato:
+{
+  "palavra_ingles": "a palavra em inglês",
+  "palavra_portugues": "a tradução em português",
+  "classe_gramatical": "substantivo | verbo | adjetivo | etc",
+  "som_aproximado": "como pronunciar em português aproximado, ex: apset para upset",
+  "frases": [
+    {
+      "contexto": "descrição curta do contexto",
+      "frase_ingles": "frase em inglês com a palavra destacada entre ** **",
+      "frase_portugues": "tradução da frase em português"
+    },
+    {
+      "contexto": "descrição curta do contexto",
+      "frase_ingles": "frase em inglês com a palavra destacada entre ** **",
+      "frase_portugues": "tradução da frase em português"
+    }
+  ],
+  "familia": {
+    "substantivo": "palavra ou null",
+    "verbo": "palavra ou null",
+    "adjetivo": "palavra ou null"
+  },
+  "quiz": {
+    "tipo": "lacuna",
+    "pergunta": "frase em inglês com ___ no lugar da palavra",
+    "opcoes": ["palavra correta", "errada1", "errada2", "errada3"],
+    "resposta_correta": 0
+  }
+}
+
+REGRAS IMPORTANTES:
+- Todas as frases de exemplo devem ser em inglês nível básico (A1/A2): curtas, simples, vocabulário cotidiano, sem gramática complexa.
+- Nunca invente traduções.
+- Nunca saia do formato JSON.`
                 },
                 {
                     role: "user",
@@ -52,8 +89,24 @@ async function chamarLLM() {
         throw new Error("A API respondeu, mas nao retornou texto.");
     }
 
-    console.log("\nResposta da IA:\n");
-    console.log(text);
+    const card = JSON.parse(text);
+    const SEP = '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━';
+
+    console.log('\n' + SEP);
+    console.log(`📖 PALAVRA: ${card.palavra_ingles} (${card.classe_gramatical})`);
+    console.log(`🔊 Som: ${card.som_aproximado}`);
+    console.log(SEP);
+    card.frases.forEach((f, i) => {
+        console.log(`\n📝 Frase ${i + 1} (${f.contexto}):`);
+        console.log(`EN: ${f.frase_ingles}`);
+        console.log(`PT: ${f.frase_portugues}`);
+    });
+    console.log('\n' + SEP);
+    console.log('👨‍👩‍👧 Família:');
+    console.log(`  substantivo: ${card.familia.substantivo ?? '—'}`);
+    console.log(`  verbo: ${card.familia.verbo ?? '—'}`);
+    console.log(`  adjetivo: ${card.familia.adjetivo ?? '—'}`);
+    console.log(SEP);
 }
 
 chamarLLM().catch((error) => {
